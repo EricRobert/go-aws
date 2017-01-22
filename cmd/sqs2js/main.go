@@ -25,11 +25,6 @@ func main() {
 		usage()
 	}
 
-	args := flag.Args()
-
-	log.Println(*url)
-	log.Println(*cmd, args)
-
 	s, err := session.NewSession()
 	if err != nil {
 		log.Fatalln("session:", err)
@@ -131,6 +126,14 @@ func (q *queue) invoke(p []byte) (err error) {
 
 	r := io.MultiReader(bytes.NewReader(p), bytes.NewReader([]byte("\n")))
 	cmd.Stdin = r
-	err = cmd.Run()
+
+	if err = cmd.Run(); err == nil {
+		return
+	}
+
+	if _, ok := err.(*exec.ExitError); !ok {
+		log.Println(err)
+	}
+
 	return
 }
