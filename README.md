@@ -1,6 +1,6 @@
 # goaws
 
-> Collection of small scripts & tools for AWS
+> Collection of simple tools and small shell scripts for AWS
 
 ## Credentials
 
@@ -14,7 +14,19 @@ They can be overriden by the `AWS_ACCESS_KEY_ID` and the `AWS_SECRET_ACCESS_KEY`
 The region can be specified along with the profile in the `~/.aws/config` file.
 It can also be overriden by the `AWS_REGION` environment variable.
 
-# sqs2js
+# s3cat
+
+Downloads an S3 object to STDOUT.
+
+```bash
+# download a file
+s3cat s3://bucket/object > local-file
+
+# print logs
+s3cat s3://bucket/file.log.gz | zcat
+```
+
+# sqscat
 
 Receives messages from the specified queue and invokes a command with the message body as STDIN.
 The message is deleted from SQS only if the command succeed.
@@ -23,14 +35,27 @@ The message is deleted from SQS only if the command succeed.
 URL="https://sqs.us-east-1.amazonaws.com/123/s3-log-received"
 
 # wait and print 1 message
-sqs2js -url "$URL" -n 1 -cmd cat
+sqscat -url "$URL" -n 1 -cmd cat
 
 # print all messages
-sqs2js -url "$URL" -cmd cat
+sqscat -url "$URL" -cmd cat
 
 # pretty print 1 messages
-sqs2js -url "$URL" -n 1 -cmd bash -- -c "jq ."
+sqscat -url "$URL" -n 1 -cmd bash -- -c "jq ."
 
 # print 1 batch of events from S3
-sqs2js -url "$URL" -n 1 -cmd bash -- -c "cmd/s3files.sh"
+sqscat -url "$URL" -n 1 -cmd bash -- -c "sh/sqs-s3-events.sh"
+```
+
+# js2ddb & ddb2js
+
+Performs the conversion between JSON and the DynamoDB format.
+
+```bash
+# create a new item in a table from a JSON object
+aws dynamodb put-item --table-name samples --item "`cat sample.json | js2ddb`"
+
+# scan table
+aws dynamodb scan --table-name samples | jq .Items[] | ddb2js
+
 ```

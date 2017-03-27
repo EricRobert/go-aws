@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -46,11 +47,31 @@ func main() {
 		r = os.Stdin
 	}
 
+	d := json.NewDecoder(r)
+	for {
+		err := read(d)
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Panic(err)
+		}
+	}
+}
+
+func read(d *json.Decoder) (err error) {
 	item := make(map[string]*dynamodb.AttributeValue)
 
-	err := json.NewDecoder(r).Decode(&item)
+	err = d.Decode(&item)
 	if err != nil {
-		log.Panicf("decode: %s", err)
+		if err == io.EOF {
+			return
+		}
+
+		err = fmt.Errorf("decode: %s", err)
+		return
 	}
 
 	m := make(map[string]interface{})
@@ -61,13 +82,19 @@ func main() {
 
 	js, err := json.Marshal(m)
 	if err != nil {
-		log.Panicf("encode: %s", err)
+		err = fmt.Errorf("encode: %s", err)
+		return
 	}
+
+	js = append(js, '\n')
 
 	_, err = os.Stdout.Write(js)
 	if err != nil {
-		log.Panicf("stdout: %s", err)
+		err = fmt.Errorf("stdout: %s", err)
+		return
 	}
+
+	return
 }
 
 func decode(value *dynamodb.AttributeValue) interface{} {
