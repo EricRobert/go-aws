@@ -59,3 +59,19 @@ aws dynamodb put-item --table-name samples --item "`cat sample.json | js2ddb`"
 aws dynamodb scan --table-name samples | jq .Items[] | ddb2js
 
 ```
+
+# ec2-autoscaling-ssh
+
+Run a command via SSH on all running instances of an auto scaling group.
+
+```bash
+# uptime on all instances?
+ec2-autoscaling-ssh.sh --group my-group --sh uptime -p
+```
+
+# ec2-import-key
+
+```bash
+# import from private key
+ec2-import-key.sh --name my-key --key ~/.ssh/id_rsa
+```
