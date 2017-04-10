@@ -1,4 +1,4 @@
-# goaws
+# go-aws
 
 > Collection of simple tools and small shell scripts for AWS
 
@@ -45,6 +45,9 @@ sqscat -url "$URL" -n 1 -cmd bash -- -c "jq ."
 
 # print 1 batch of events from S3
 sqscat -url "$URL" -n 1 -cmd bash -- -c "sh/sqs-s3-events.sh"
+
+# forward to wlog service
+sqscat -url "$URL" -cmd curl -- --data-binary @- https://wlog.cloud/events -H 'Authorization: $AUTH'
 ```
 
 # js2ddb & ddb2js
