@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -47,9 +48,13 @@ func main() {
 		r = os.Stdin
 	}
 
-	d := json.NewDecoder(r)
+	w := writer{
+		d: json.NewDecoder(r),
+		b: &bytes.Buffer{},
+	}
+
 	for {
-		err := read(d)
+		err := w.read()
 
 		if err == io.EOF {
 			break
@@ -59,12 +64,49 @@ func main() {
 			log.Panic(err)
 		}
 	}
+
+	if w.b == nil {
+		io.WriteString(os.Stdout, "]\n")
+	} else {
+		if w.b.Len() != 0 {
+			io.Copy(os.Stdout, w.b)
+			io.WriteString(os.Stdout, "\n")
+		}
+	}
 }
 
-func read(d *json.Decoder) (err error) {
+type writer struct {
+	b *bytes.Buffer
+	d *json.Decoder
+}
+
+func (w *writer) Write(p []byte) (n int, err error) {
+	if w.b != nil {
+		if w.b.Len() == 0 {
+			n, err = w.b.Write(p)
+			return
+		}
+
+		io.WriteString(os.Stdout, "[")
+		io.Copy(os.Stdout, w.b)
+		w.b = nil
+	}
+
+	io.WriteString(os.Stdout, ",")
+
+	n, err = os.Stdout.Write(p)
+	if err != nil {
+		err = fmt.Errorf("stdout: %s", err)
+		return
+	}
+
+	return
+}
+
+func (w *writer) read() (err error) {
 	item := make(map[string]*dynamodb.AttributeValue)
 
-	err = d.Decode(&item)
+	err = w.d.Decode(&item)
 	if err != nil {
 		if err == io.EOF {
 			return
@@ -86,11 +128,9 @@ func read(d *json.Decoder) (err error) {
 		return
 	}
 
-	js = append(js, '\n')
-
-	_, err = os.Stdout.Write(js)
+	_, err = w.Write(js)
 	if err != nil {
-		err = fmt.Errorf("stdout: %s", err)
+		err = fmt.Errorf("write: %s", err)
 		return
 	}
 
