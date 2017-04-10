@@ -104,7 +104,7 @@ func read(d *json.Decoder) (err error) {
 func encode(value interface{}) *dynamodb.AttributeValue {
 	switch item := value.(type) {
 	case bool:
-		return &dynamodb.AttributeValue{BOOL: aws.Bool(true)}
+		return &dynamodb.AttributeValue{BOOL: aws.Bool(item)}
 
 	case float64:
 		f := strconv.FormatFloat(item, 'g', -1, 64)
